@@ -1,0 +1,36 @@
+# Typstique Problem Set
+# Lines starting with # are comments
+# Each line is a Typst math expression (without the $ delimiters)
+
+# Loss functions
+ell(h,y) = log(1 + exp(-h y))
+
+# Risk and expectations  
+R(h) = P[h(x) != y] = EE[II[h(x) != y]]
+
+# Gradient descent
+w_(k+1) <- w_k - alpha_k nabla R_n (w_k)
+
+# Basic calculus
+lim_(x -> 0) (sin x)/x = 1
+integral_0^infinity e^(-x) dif x = 1
+frac(d y, d x) = f(x)
+
+# Algebra
+x^2 + y^2 = r^2
+sum_(i=1)^n i = (n(n+1))/2
+sqrt(a^2 + b^2)
+
+# Physics
+E = m c^2
+bold(F) = m bold(a)
+nabla times bold(E) = -frac(diff bold(B), diff t)
+
+# Probability
+P(A | B) = frac(P(B | A) P(A), P(B))
+EE[X] = sum_(i=1)^n x_i p_i
+"Var"(X) = EE[X^2] - EE[X]^2
+
+# Linear algebra
+det(bold(A)) = sum_(sigma in S_n) "sgn"(sigma) product_(i=1)^n a_(i, sigma(i))
+bold(A)^(-1) = frac(1, det(bold(A))) "adj"(bold(A))
