@@ -2,8 +2,8 @@
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  basePath: '/typstnique',
-  assetPrefix: '/typstnique',
+  basePath: '/typstgame',
+  assetPrefix: '/typstgame',
   typescript: {
     ignoreBuildErrors: true,
   },
