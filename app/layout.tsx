@@ -8,7 +8,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono
 const _playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const metadata: Metadata = {
-  title: 'Typstique',
+  title: 'Typstgame',
   description: 'A minimal Typst math typing practice tool',
   generator: 'v0.app',
   icons: {
