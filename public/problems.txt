@@ -1,7 +1,3 @@
-# Typstique Problem Set
-# Lines starting with # are comments
-# Each line is a Typst math expression (without the $ delimiters)
-
 # Loss functions
 ell(h,y) = log(1 + exp(-h y))
 
