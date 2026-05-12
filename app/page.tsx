@@ -149,7 +149,7 @@ Because it’s built in Rust, it compiles to a single fast, portable executable 
         </section>
 
         <footer className="text-center text-xs text-muted-foreground pt-8">
-          By Simon Holm · copyright © 2026 
+          By Simon Holm  ·  copyright © 2026 
         </footer>
       </div>
     </main>

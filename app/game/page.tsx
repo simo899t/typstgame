@@ -38,6 +38,7 @@ export default function TypstiquePage() {
   const [skipped, setSkipped] = useState(0)
   const [solvedSet, setSolvedSet] = useState<Set<number>>(new Set())
   const [skippedSet, setSkippedSet] = useState<Set<number>>(new Set())
+  const [solvedAnswers, setSolvedAnswers] = useState<Map<number, string>>(new Map())
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [userInput, setUserInput] = useState("")
   const [targetSvg, setTargetSvg] = useState("")
@@ -48,6 +49,9 @@ export default function TypstiquePage() {
   const [typstReady, setTypstReady] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const advanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const solvedAnswersRef = useRef<Map<number, string>>(new Map())
+  solvedAnswersRef.current = solvedAnswers
 
   // Load Typst WASM
   useEffect(() => {
@@ -108,13 +112,19 @@ export default function TypstiquePage() {
 
   useEffect(() => {
     renderTarget()
-    setUserInput("")
+    const savedAnswer = solvedAnswersRef.current.get(currentIndex)
+    if (savedAnswer !== undefined) {
+      setUserInput(savedAnswer)
+      setIsCorrect(true)
+    } else {
+      setUserInput("")
+      setIsCorrect(false)
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
     setPreviewSvg("")
     setPreviewError(false)
-    setIsCorrect(false)
     setSolutionShown(false)
-    inputRef.current?.focus()
-  }, [renderTarget])
+  }, [renderTarget, currentIndex])
 
   // Live preview with debounce
   useEffect(() => {
@@ -151,23 +161,45 @@ export default function TypstiquePage() {
   // Check for correct answer
   const normalize = (s: string) => s.trim().replace(/\s+/g, " ")
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setUserInput(value)
-
-    if (!solutionShown && normalize(value) === normalize(problems[currentIndex])) {
+  const markCorrect = useCallback(
+    (answer: string) => {
       setIsCorrect(true)
       setSolved((s) => s + 1)
       setSolvedSet((prev) => new Set(prev).add(currentIndex))
-      setTimeout(() => {
+      setSolvedAnswers((prev) => new Map(prev).set(currentIndex, answer))
+      advanceTimeoutRef.current = setTimeout(() => {
+        advanceTimeoutRef.current = null
         if (currentIndex + 1 >= problems.length) {
           setGameState("done")
         } else {
           setCurrentIndex((i) => i + 1)
         }
       }, 600)
+    },
+    [currentIndex, problems.length]
+  )
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setUserInput(value)
+
+    if (
+      !solutionShown &&
+      !solvedSet.has(currentIndex) &&
+      normalize(value) === normalize(problems[currentIndex])
+    ) {
+      markCorrect(value)
     }
   }
+
+  // Accept any input that renders visually identical to the target
+  useEffect(() => {
+    if (!previewSvg || !targetSvg) return
+    if (solutionShown) return
+    if (solvedSet.has(currentIndex)) return
+    if (previewSvg !== targetSvg) return
+    markCorrect(userInput)
+  }, [previewSvg, targetSvg, solutionShown, solvedSet, currentIndex, userInput, markCorrect])
 
   const handleSkip = () => {
     setSkipped((s) => s + 1)
@@ -201,6 +233,7 @@ export default function TypstiquePage() {
     setSkipped(0)
     setSolvedSet(new Set())
     setSkippedSet(new Set())
+    setSolvedAnswers(new Map())
     setUserInput("")
     setGameState("playing")
   }
@@ -440,9 +473,11 @@ export default function TypstiquePage() {
               <button
                 key={idx}
                 onClick={() => {
-                  if (!isCorrect) {
-                    setCurrentIndex(idx)
+                  if (advanceTimeoutRef.current) {
+                    clearTimeout(advanceTimeoutRef.current)
+                    advanceTimeoutRef.current = null
                   }
+                  setCurrentIndex(idx)
                 }}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
