@@ -8,18 +8,28 @@ import { cn } from "@/lib/utils"
 
 type GameState = "loading" | "playing" | "done"
 
-function parseProblemsFile(text: string): string[] {
+type Problem = { math: string; hint?: string }
+
+function parseProblemsFile(text: string): Problem[] {
   return text
     .split("\n")
-    .map((line) => {
-      let l = line.trim()
+    .map((line): Problem | null => {
+      const l = line.trim()
+      if (!l || l.startsWith("#")) return null
+
+      // Split math and hint on the first unescaped '#'
+      const hashIdx = l.indexOf("#")
+      let math = (hashIdx >= 0 ? l.slice(0, hashIdx) : l).trim()
+      const hint = hashIdx >= 0 ? l.slice(hashIdx + 1).trim() : undefined
+
       // Remove $ delimiters if present
-      if (l.startsWith("$") && l.endsWith("$") && l.length > 1) {
-        l = l.slice(1, -1).trim()
+      if (math.startsWith("$") && math.endsWith("$") && math.length > 1) {
+        math = math.slice(1, -1).trim()
       }
-      return l
+      if (!math) return null
+      return { math, hint: hint || undefined }
     })
-    .filter((l) => l && !l.startsWith("#"))
+    .filter((p): p is Problem => p !== null)
 }
 
 function makeTypstDoc(math: string) {
@@ -32,7 +42,7 @@ function makeTypstDoc(math: string) {
 
 export default function TypstiquePage() {
   const [gameState, setGameState] = useState<GameState>("loading")
-  const [problems, setProblems] = useState<string[]>([])
+  const [problems, setProblems] = useState<Problem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [solved, setSolved] = useState(0)
   const [skipped, setSkipped] = useState(0)
@@ -48,6 +58,7 @@ export default function TypstiquePage() {
   const [previewError, setPreviewError] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
   const [solutionShown, setSolutionShown] = useState(false)
+  const [hintShown, setHintShown] = useState(false)
   const [typstReady, setTypstReady] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -103,7 +114,7 @@ export default function TypstiquePage() {
     if (!typstReady || problems.length === 0 || currentIndex >= problems.length) return
 
     const indexAtCall = currentIndex
-    const math = problems[indexAtCall]
+    const math = problems[indexAtCall].math
     try {
       // @ts-expect-error - $typst is loaded via CDN
       const svg = await window.$typst.svg({ mainContent: makeTypstDoc(math) })
@@ -130,6 +141,7 @@ export default function TypstiquePage() {
     setPreviewSvgInput("")
     setPreviewError(false)
     setSolutionShown(false)
+    setHintShown(false)
   }, [renderTarget, currentIndex])
 
   // Live preview with debounce
@@ -205,7 +217,7 @@ export default function TypstiquePage() {
     if (
       !solutionShown &&
       !solvedSet.has(currentIndex) &&
-      normalize(value) === normalize(problems[currentIndex])
+      normalize(value) === normalize(problems[currentIndex].math)
     ) {
       markCorrect(value)
     }
@@ -249,6 +261,10 @@ export default function TypstiquePage() {
       setSkipped((s) => s + 1)
       setSkippedSet((prev) => new Set(prev).add(currentIndex))
     }
+  }
+
+  const handleShowHint = () => {
+    setHintShown(true)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -417,6 +433,18 @@ export default function TypstiquePage() {
             )}
           </div>
 
+          {/* Hint reveal */}
+          {hintShown && problems[currentIndex].hint && (
+            <div className="bg-muted/40 border border-border rounded-lg px-4 py-3 flex items-center gap-3">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground shrink-0">
+                Hint
+              </span>
+              <p className="text-sm text-foreground italic break-words">
+                {problems[currentIndex].hint}
+              </p>
+            </div>
+          )}
+
           {/* Solution reveal */}
           {solutionShown && (
             <div className="bg-muted/40 border border-border rounded-lg px-4 py-3 flex items-center gap-3">
@@ -424,7 +452,7 @@ export default function TypstiquePage() {
                 Solution
               </span>
               <code className="font-mono text-sm text-foreground break-all">
-                {problems[currentIndex]}
+                {problems[currentIndex].math}
               </code>
             </div>
           )}
@@ -436,6 +464,19 @@ export default function TypstiquePage() {
               {skipped > 0 && ` · ${skipped} skipped`}
             </p>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShowHint}
+                disabled={
+                  isCorrect ||
+                  hintShown ||
+                  !problems[currentIndex]?.hint
+                }
+                className="text-xs"
+              >
+                Hint
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
