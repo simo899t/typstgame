@@ -130,7 +130,7 @@ Because it’s built in Rust, it compiles to a single fast, portable executable 
                 Template for usage
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                The template and example files I use for my university notes.
+                The template and example files I use for my university notes. Feel free to download and experiment.
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ Because it’s built in Rust, it compiles to a single fast, portable executable 
         </section>
 
         <footer className="text-center text-xs text-muted-foreground pt-8">
-          Built with Next.js · Typeset with Typst
+          By Simon Holm · copyright © 2026 
         </footer>
       </div>
     </main>

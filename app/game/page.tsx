@@ -44,6 +44,7 @@ export default function TypstiquePage() {
   const [previewSvg, setPreviewSvg] = useState("")
   const [previewError, setPreviewError] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+  const [solutionShown, setSolutionShown] = useState(false)
   const [typstReady, setTypstReady] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -111,6 +112,7 @@ export default function TypstiquePage() {
     setPreviewSvg("")
     setPreviewError(false)
     setIsCorrect(false)
+    setSolutionShown(false)
     inputRef.current?.focus()
   }, [renderTarget])
 
@@ -153,7 +155,7 @@ export default function TypstiquePage() {
     const value = e.target.value
     setUserInput(value)
 
-    if (normalize(value) === normalize(problems[currentIndex])) {
+    if (!solutionShown && normalize(value) === normalize(problems[currentIndex])) {
       setIsCorrect(true)
       setSolved((s) => s + 1)
       setSolvedSet((prev) => new Set(prev).add(currentIndex))
@@ -174,6 +176,15 @@ export default function TypstiquePage() {
       setGameState("done")
     } else {
       setCurrentIndex((i) => i + 1)
+    }
+  }
+
+  const handleShowSolution = () => {
+    if (solutionShown) return
+    setSolutionShown(true)
+    if (!skippedSet.has(currentIndex)) {
+      setSkipped((s) => s + 1)
+      setSkippedSet((prev) => new Set(prev).add(currentIndex))
     }
   }
 
@@ -342,24 +353,47 @@ export default function TypstiquePage() {
             )}
           </div>
 
+          {/* Solution reveal */}
+          {solutionShown && (
+            <div className="bg-muted/40 border border-border rounded-lg px-4 py-3 flex items-center gap-3">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground shrink-0">
+                Solution
+              </span>
+              <code className="font-mono text-sm text-foreground break-all">
+                ${problems[currentIndex]}$
+              </code>
+            </div>
+          )}
+
           {/* Footer */}
           <footer className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
               {problems.length - currentIndex - 1} remaining
               {skipped > 0 && ` · ${skipped} skipped`}
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSkip}
-              disabled={isCorrect}
-              className="text-xs"
-            >
-              Skip{" "}
-              <kbd className="ml-2 px-1.5 py-0.5 text-[10px] bg-muted rounded">
-                Tab
-              </kbd>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleShowSolution}
+                disabled={isCorrect || solutionShown}
+                className="text-xs"
+              >
+                Show Solution
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSkip}
+                disabled={isCorrect}
+                className="text-xs"
+              >
+                Skip{" "}
+                <kbd className="ml-2 px-1.5 py-0.5 text-[10px] bg-muted rounded">
+                  Tab
+                </kbd>
+              </Button>
+            </div>
           </footer>
         </div>
 
