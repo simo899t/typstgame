@@ -360,7 +360,7 @@ export default function TypstiquePage() {
                 Solution
               </span>
               <code className="font-mono text-sm text-foreground break-all">
-                ${problems[currentIndex]}$
+                {problems[currentIndex]}
               </code>
             </div>
           )}
