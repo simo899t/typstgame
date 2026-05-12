@@ -101,14 +101,17 @@ export default function TypstiquePage() {
   // Render target when problem changes
   const renderTarget = useCallback(async () => {
     if (!typstReady || problems.length === 0 || currentIndex >= problems.length) return
-    
-    const math = problems[currentIndex]
+
+    const indexAtCall = currentIndex
+    const math = problems[indexAtCall]
     try {
       // @ts-expect-error - $typst is loaded via CDN
       const svg = await window.$typst.svg({ mainContent: makeTypstDoc(math) })
       setTargetSvg(svg)
+      setTargetSvgIndex(indexAtCall)
     } catch {
       setTargetSvg("")
+      setTargetSvgIndex(-1)
     }
   }, [typstReady, problems, currentIndex])
 
@@ -124,6 +127,7 @@ export default function TypstiquePage() {
       requestAnimationFrame(() => inputRef.current?.focus())
     }
     setPreviewSvg("")
+    setPreviewSvgInput("")
     setPreviewError(false)
     setSolutionShown(false)
   }, [renderTarget, currentIndex])
@@ -140,15 +144,18 @@ export default function TypstiquePage() {
       return
     }
 
+    const capturedInput = userInput
     previewTimeoutRef.current = setTimeout(async () => {
       if (!typstReady) return
       try {
         // @ts-expect-error - $typst is loaded via CDN
-        const svg = await window.$typst.svg({ mainContent: makeTypstDoc(userInput) })
+        const svg = await window.$typst.svg({ mainContent: makeTypstDoc(capturedInput) })
         setPreviewSvg(svg)
+        setPreviewSvgInput(capturedInput)
         setPreviewError(false)
       } catch {
         setPreviewSvg("")
+        setPreviewSvgInput("")
         setPreviewError(true)
       }
     }, 200)
@@ -207,11 +214,23 @@ export default function TypstiquePage() {
   // Accept any input that renders visually identical to the target
   useEffect(() => {
     if (!previewSvg || !targetSvg) return
+    if (targetSvgIndex !== currentIndex) return
+    if (previewSvgInput !== userInput) return
     if (solutionShown) return
     if (solvedSet.has(currentIndex)) return
     if (normalizeSvg(previewSvg) !== normalizeSvg(targetSvg)) return
     markCorrect(userInput)
-  }, [previewSvg, targetSvg, solutionShown, solvedSet, currentIndex, userInput, markCorrect])
+  }, [
+    previewSvg,
+    previewSvgInput,
+    targetSvg,
+    targetSvgIndex,
+    solutionShown,
+    solvedSet,
+    currentIndex,
+    userInput,
+    markCorrect,
+  ])
 
   const handleSkip = () => {
     setSkipped((s) => s + 1)
