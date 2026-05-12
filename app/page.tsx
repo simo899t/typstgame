@@ -95,28 +95,29 @@ export default function LandingPage() {
 
               <div className="grid gap-4 sm:grid-cols-2 pt-2">
                 <Bullet
-                  title="Compiles in milliseconds"
-                  body="Incremental compilation gives you a live PDF preview as you type — no more 10-second LaTeX waits."
+                  title="Fast compilation"
+                  body="Typst uses a modern engine with 'incremental compilation', this means that only the changed parts of the document are recomputed instead of rebuilding everything. Because of this, typst can live preview a pdf as you type."
                 />
                 <Bullet
-                  title="Sane, readable syntax"
-                  body="Markup looks like Markdown, scripting looks like a real programming language. No backslashes-and-braces soup."
+                  title="Much more readable syntax"
+                  body="Unlike LaTeX, typst doesn't use the same backslashes and curly-brackets, instead, functions are written in a cleaner, more programming-like syntax with normal parentheses and brackets. This not only makes debugging easier but also makes the code way more readable."
                 />
                 <Bullet
-                  title="Errors that make sense"
-                  body="Typst's error messages point to the exact line, with a real explanation — not a 200-line LaTeX log."
+                  title="Error pinpoint"
+                  body="Typst gives clear error messages that highlight the exact line and explain the issue directly, instead of dumping a 200-line LaTeX log — whether you use the native app or compile it on your own PC."
                 />
                 <Bullet
-                  title="Batteries included"
-                  body="Math, figures, citations, tables, and a real package manager — no TeX Live install, no ten different macro packages doing the same thing."
+                  title="Less imports/libraries"
+                  body="Math, figures, citations, tables, and a built-in package system — Typst handles most of it out of the box, so you rarely need to import extra packages like in LaTeX."
                 />
                 <Bullet
                   title="Real functions, real variables"
-                  body="`#let`, real scoping, first-class functions. Macros stop being a black art."
+                  body="#let, real scoping, first-class functions — you can easily define functions, pass them around, and reuse them cleanly, which makes everything much easier and more structured than LaTeX macros."
                 />
                 <Bullet
                   title="One binary, zero setup"
-                  body="A single Rust binary runs everywhere. No 5 GB TeX distribution, no missing-package surprises in CI."
+                  body="After install it just works, no TeX Live or dependency chains to manage.
+Because it’s built in Rust, it compiles to a single fast, portable executable with no runtime clutter or external tooling needed."
                 />
               </div>
             </div>
