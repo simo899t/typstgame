@@ -468,11 +468,7 @@ export default function TypstiquePage() {
                 variant="outline"
                 size="sm"
                 onClick={handleShowHint}
-                disabled={
-                  isCorrect ||
-                  hintShown ||
-                  !problems[currentIndex]?.hint
-                }
+                disabled={hintShown || !problems[currentIndex]?.hint}
                 className="text-xs"
               >
                 Hint
