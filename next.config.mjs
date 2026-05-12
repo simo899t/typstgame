@@ -1,9 +1,14 @@
 /** @type {import('next').NextConfig} */
+const basePath = '/typstgame'
+
 const nextConfig = {
   output: 'export',
   trailingSlash: true,
-  basePath: '/typstgame',
-  assetPrefix: '/typstgame',
+  basePath,
+  assetPrefix: basePath,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -13,4 +18,3 @@ const nextConfig = {
 }
 
 export default nextConfig
-// Trigger redeploy

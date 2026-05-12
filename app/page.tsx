@@ -66,7 +66,8 @@ export default function TypstiquePage() {
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/problems.txt")
+    const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+    fetch(`${basePath}/problems.txt`)
       .then((r) => r.text())
       .then((text) => {
         const parsed = parseProblemsFile(text)
