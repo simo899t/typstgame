@@ -1,14 +1,10 @@
-
-1+1=2
+1+1=2 # if you cant do this, i suggest you drop out of university
 
 a^2+b^2=c^2
 
 e^(pi i) -1 = 0
 
-
-
 y = f(x), quad x = f^(-1)(y)
-
 
 min_x c^T x \ s.t quad A^T x >= b
 
