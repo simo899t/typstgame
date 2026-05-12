@@ -161,6 +161,16 @@ export default function TypstiquePage() {
   // Check for correct answer
   const normalize = (s: string) => s.trim().replace(/\s+/g, " ")
 
+  // Strip IDs/refs and whitespace so two visually-identical Typst SVGs compare equal
+  const normalizeSvg = (svg: string) =>
+    svg
+      .replace(/\sid="[^"]*"/g, "")
+      .replace(/\sdata-tid="[^"]*"/g, "")
+      .replace(/href="#[^"]*"/g, "")
+      .replace(/xlink:href="#[^"]*"/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+
   const markCorrect = useCallback(
     (answer: string) => {
       setIsCorrect(true)
@@ -197,7 +207,7 @@ export default function TypstiquePage() {
     if (!previewSvg || !targetSvg) return
     if (solutionShown) return
     if (solvedSet.has(currentIndex)) return
-    if (previewSvg !== targetSvg) return
+    if (normalizeSvg(previewSvg) !== normalizeSvg(targetSvg)) return
     markCorrect(userInput)
   }, [previewSvg, targetSvg, solutionShown, solvedSet, currentIndex, userInput, markCorrect])
 
