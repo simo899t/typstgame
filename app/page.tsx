@@ -88,8 +88,7 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Typst is a modern, open-source typesetting system. Like LaTeX,
-                it takes a plain-text source and produces a beautifully typeset
-                PDF — but it was built from scratch in 2023 with the lessons of
+                it takes a plain-text source and produces a PDF — but it was built from scratch in 2023 with the lessons of
                 forty years of LaTeX pain in mind.
               </p>
 
