@@ -14,17 +14,15 @@ y = f(x), quad x = f^(-1)(y) # Use `quad` to create 4 spaces (as opposed to \qua
 
 forall x in NN, exists y in NN : y > x # For blackboard bold symbols either use `bb(x)` or for common symbols like real numbers do `RR` (in contrast to \mathbb{R})
 
-sum_(T in cal(T)) sum_(a in A) sum_(b in L_a) w(a) y_(T,a,b) # make sums like this `sum_a^b content`
-
 sum_(i=1)^5 i = 15 # Use `sum_a^b` to make sums initialized at from a to b
 
 product_(i=1)^5 i = 120 Use `product_a^b` to make products initialized at from a to b
 
-integral_0^1 x space dif x = 1/2 # Use `integral_a^b` to make products initialized at from a to b
+integral_0^1 x space dif x = 1/2 # Use `dif x` to make products initialized at from a to b. 
 
+EE[X in cal(X)] = mu # For calligraphy font use cal(x)
 
-
-sum_(T in cal(T)) sum_(a in A) sum_(b in L_a) w(a) y_(T,a,b)
+sum_(T in cal(T)) sum_(a in A) sum_(b in L_a) w(a) y_(T,a,b) # Use cal(T)
 
 min_x c^T x \ s.t quad A^T x >= b # use `\` to break lines
 
