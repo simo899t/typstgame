@@ -1,4 +1,4 @@
-11 + 1 = 2 # if you cant do this, i suggest you drop out of university.
+1 + 1 = 2 # if you cant do this, i suggest you drop out of university.
 
 a^2 + b^2 = c^2 # use `^` to superscript.
 
