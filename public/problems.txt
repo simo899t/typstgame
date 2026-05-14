@@ -1,23 +1,23 @@
 
-1 + 1 = 2 # +
+1 + 1 = 2 # if you cant solve this, i suggest you drop out of university :/
 
 a dot b + c dot d = e # dot
 
 (a + b) dot (c + d) # no hint
 
-x^2 + 2 dot x dot y + y^2 # ^
+x^2 + 2 x y + y^2 # ^
 
-(x_(n+1) - x_n) / (x_n - x_(n-1)) # no hint
+(x_(n+1) - x_n) / (x_n - x_(n-1)) # ()/()
 
 sum_(i = 1)^n (i dot (i + 1)) # sum_a^b
 
 product_(i = 1)^n (1 + 1 / i) # product_a^b
 
-integral_0^1 (x^2 + x) space dif x # integral_a^b space dif x
+integral_0^1 (x^2 + x) space dif x # integral f space dif x
 
 lim_(n -> oo) sum_(i = 1)^n 1 / n # lim_(x -> a) f
 
-f(x) = x dot x + 2 dot x + 1 # fno hint
+f(x) = x dot x + 2 dot x + 1 # no hint
 
 f(x) = (x + 1)^2 # no hint
 
@@ -31,11 +31,11 @@ A = {x in RR | x^2 + x - 2 < 0} # RR, bar
 
 A = {x in RR | (x - 1)(x + 2) < 0} # no hint
 
-EE x in RR : x^2 - 2 dot x + 1 = 0 # no hint
+exists x in RR : x^2 - 2 dot x + 1 = 0 # exists
 
-EE! x in RR : x dot x = 1 # EE! # no hint
+exists! x in RR : x dot x = 1 # EE! # no hint
 
-AA x in RR : x^2 >= 0 # no hint
+forall x in RR : x^2 >= 0 # no hint
 
 p -> (q -> r) # -> 
 
@@ -43,7 +43,7 @@ p -> (q -> r) # ->
 
 not (p and (q or r)) # not
 
-cases(x^2 + 1, x < 0;x dot x + x, x >= 0) # cases(,;)
+cases(x^2 + 1, x < 0,x dot x + x, x >= 0) # cases(,;)
 
 mat(1, 2, 3;4, 5, 6;7, 8, 9) dot vec(x, y, z) # mat(,;) vec(,)
 
