@@ -40,26 +40,57 @@ function makeTypstDoc(math: string) {
   ].join("\n")
 }
 
+// Make sure the SVG has the namespace declaration — browsers refuse to
+// render it inside <img> without one.
+function ensureSvgNamespace(svg: string): string {
+  if (/<svg[^>]*\sxmlns\s*=/.test(svg)) return svg
+  return svg.replace(/<svg\b/, '<svg xmlns="http://www.w3.org/2000/svg"')
+}
+
 // Load an SVG string into an HTMLImageElement so we can rasterize it.
-function loadSvgImage(svg: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    try {
-      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
-      const url = URL.createObjectURL(blob)
-      const img = new Image()
-      img.onload = () => {
-        URL.revokeObjectURL(url)
-        resolve(img)
-      }
-      img.onerror = () => {
-        URL.revokeObjectURL(url)
-        resolve(null)
-      }
-      img.src = url
-    } catch {
-      resolve(null)
-    }
-  })
+// Uses a base64 data URL + img.decode() for the most reliable cross-browser path.
+async function loadSvgImage(svg: string): Promise<HTMLImageElement | null> {
+  try {
+    const normalized = ensureSvgNamespace(svg)
+    const bytes = new TextEncoder().encode(normalized)
+    let binary = ""
+    for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+    const url = "data:image/svg+xml;base64," + btoa(binary)
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    return img
+  } catch {
+    return null
+  }
+}
+
+// Parse SVG width/height attributes as fallback for naturalWidth/naturalHeight,
+// since some browsers report 0 for SVGs with pt-unit dimensions.
+function parseSvgSize(svg: string): { w: number; h: number } | null {
+  const wMatch = svg.match(/<svg[^>]*\swidth="([^"]+)"/)
+  const hMatch = svg.match(/<svg[^>]*\sheight="([^"]+)"/)
+  if (!wMatch || !hMatch) {
+    // Try viewBox as last resort.
+    const vb = svg.match(/<svg[^>]*\sviewBox="([\d.\s-]+)"/)
+    if (!vb) return null
+    const parts = vb[1].trim().split(/\s+/).map(Number)
+    if (parts.length !== 4 || parts.some(Number.isNaN)) return null
+    return { w: parts[2], h: parts[3] }
+  }
+  const toPx = (s: string) => {
+    const m = s.match(/^([\d.]+)\s*([a-z%]*)$/i)
+    if (!m) return NaN
+    const v = parseFloat(m[1])
+    const unit = m[2].toLowerCase()
+    if (unit === "pt") return v * (96 / 72)
+    if (unit === "" || unit === "px") return v
+    return v
+  }
+  const w = toPx(wMatch[1])
+  const h = toPx(hMatch[1])
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null
+  return { w, h }
 }
 
 // Rasterize an image onto a white canvas of the given size, top-left aligned.
@@ -91,26 +122,45 @@ function pixelDiffRatio(a: ImageData, b: ImageData): number {
   return diff / (len / 4)
 }
 
-// Compare two SVGs by rasterizing each onto a shared canvas size and counting pixel diff.
-// Returns true if the rendered images are visually equivalent within tolerance.
+// Strip the parts of an SVG that vary across renders without affecting the
+// visual output: variable ID suffixes, whitespace, formatting. Typst gives
+// glyphs stable content-derived IDs, so two visually-identical SVGs from the
+// same Typst version normalize to the same string.
+function normalizeSvgForCompare(svg: string): string {
+  return svg
+    .replace(/\sid="[^"]*"/g, "")
+    .replace(/\sdata-tid="[^"]*"/g, "")
+    .replace(/\s(?:xlink:)?href="#[^"]*"/g, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/>\s+</g, "><")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+// Compare two SVGs. Fast path: smart string normalization (catches identical
+// renders cheaply). Fallback: rasterize each to a canvas and pixel-diff.
 async function svgsLookEqual(svgA: string, svgB: string): Promise<boolean> {
+  if (normalizeSvgForCompare(svgA) === normalizeSvgForCompare(svgB)) return true
+
   const [imgA, imgB] = await Promise.all([loadSvgImage(svgA), loadSvgImage(svgB)])
   if (!imgA || !imgB) return false
-  const wA = imgA.naturalWidth
-  const hA = imgA.naturalHeight
-  const wB = imgB.naturalWidth
-  const hB = imgB.naturalHeight
-  if (wA === 0 || hA === 0 || wB === 0 || hB === 0) return false
+  const sizeA = imgA.naturalWidth > 0 && imgA.naturalHeight > 0
+    ? { w: imgA.naturalWidth, h: imgA.naturalHeight }
+    : parseSvgSize(svgA)
+  const sizeB = imgB.naturalWidth > 0 && imgB.naturalHeight > 0
+    ? { w: imgB.naturalWidth, h: imgB.naturalHeight }
+    : parseSvgSize(svgB)
+  if (!sizeA || !sizeB) return false
 
   // If dimensions differ wildly, the images are clearly different.
   // Allow up to 8% size difference to absorb sub-pixel rounding between identical-looking renders.
-  const wRatio = Math.min(wA, wB) / Math.max(wA, wB)
-  const hRatio = Math.min(hA, hB) / Math.max(hA, hB)
+  const wRatio = Math.min(sizeA.w, sizeB.w) / Math.max(sizeA.w, sizeB.w)
+  const hRatio = Math.min(sizeA.h, sizeB.h) / Math.max(sizeA.h, sizeB.h)
   if (wRatio < 0.92 || hRatio < 0.92) return false
 
   // Rasterize both onto a canvas sized to the union, padded with white.
-  const w = Math.max(wA, wB)
-  const h = Math.max(hA, hB)
+  const w = Math.max(sizeA.w, sizeB.w)
+  const h = Math.max(sizeA.h, sizeB.h)
   const dataA = rasterize(imgA, w, h)
   const dataB = rasterize(imgB, w, h)
   if (!dataA || !dataB) return false
