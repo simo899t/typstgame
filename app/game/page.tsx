@@ -40,6 +40,85 @@ function makeTypstDoc(math: string) {
   ].join("\n")
 }
 
+// Load an SVG string into an HTMLImageElement so we can rasterize it.
+function loadSvgImage(svg: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    try {
+      const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
+      const url = URL.createObjectURL(blob)
+      const img = new Image()
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        resolve(img)
+      }
+      img.onerror = () => {
+        URL.revokeObjectURL(url)
+        resolve(null)
+      }
+      img.src = url
+    } catch {
+      resolve(null)
+    }
+  })
+}
+
+// Rasterize an image onto a white canvas of the given size, top-left aligned.
+function rasterize(img: HTMLImageElement, w: number, h: number): ImageData | null {
+  const canvas = document.createElement("canvas")
+  canvas.width = Math.max(1, Math.ceil(w))
+  canvas.height = Math.max(1, Math.ceil(h))
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return null
+  ctx.fillStyle = "#ffffff"
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight)
+  return ctx.getImageData(0, 0, canvas.width, canvas.height)
+}
+
+// Count what fraction of pixels differ between two equally-sized image buffers.
+// Uses luminance difference with a per-channel tolerance to absorb anti-aliasing noise.
+function pixelDiffRatio(a: ImageData, b: ImageData): number {
+  if (a.width !== b.width || a.height !== b.height) return 1
+  const ad = a.data
+  const bd = b.data
+  const len = ad.length
+  let diff = 0
+  for (let i = 0; i < len; i += 4) {
+    const aL = ad[i] * 0.299 + ad[i + 1] * 0.587 + ad[i + 2] * 0.114
+    const bL = bd[i] * 0.299 + bd[i + 1] * 0.587 + bd[i + 2] * 0.114
+    if (Math.abs(aL - bL) > 24) diff++
+  }
+  return diff / (len / 4)
+}
+
+// Compare two SVGs by rasterizing each onto a shared canvas size and counting pixel diff.
+// Returns true if the rendered images are visually equivalent within tolerance.
+async function svgsLookEqual(svgA: string, svgB: string): Promise<boolean> {
+  const [imgA, imgB] = await Promise.all([loadSvgImage(svgA), loadSvgImage(svgB)])
+  if (!imgA || !imgB) return false
+  const wA = imgA.naturalWidth
+  const hA = imgA.naturalHeight
+  const wB = imgB.naturalWidth
+  const hB = imgB.naturalHeight
+  if (wA === 0 || hA === 0 || wB === 0 || hB === 0) return false
+
+  // If dimensions differ wildly, the images are clearly different.
+  // Allow up to 8% size difference to absorb sub-pixel rounding between identical-looking renders.
+  const wRatio = Math.min(wA, wB) / Math.max(wA, wB)
+  const hRatio = Math.min(hA, hB) / Math.max(hA, hB)
+  if (wRatio < 0.92 || hRatio < 0.92) return false
+
+  // Rasterize both onto a canvas sized to the union, padded with white.
+  const w = Math.max(wA, wB)
+  const h = Math.max(hA, hB)
+  const dataA = rasterize(imgA, w, h)
+  const dataB = rasterize(imgB, w, h)
+  if (!dataA || !dataB) return false
+
+  // Allow up to 1.5% of pixels to differ — handles anti-aliasing along glyph edges.
+  return pixelDiffRatio(dataA, dataB) < 0.015
+}
+
 export default function TypstiquePage() {
   const [gameState, setGameState] = useState<GameState>("loading")
   const [problems, setProblems] = useState<Problem[]>([])
@@ -182,16 +261,6 @@ export default function TypstiquePage() {
   // Check for correct answer
   const normalize = (s: string) => s.trim().replace(/\s+/g, " ")
 
-  // Strip IDs/refs and whitespace so two visually-identical Typst SVGs compare equal
-  const normalizeSvg = (svg: string) =>
-    svg
-      .replace(/\sid="[^"]*"/g, "")
-      .replace(/\sdata-tid="[^"]*"/g, "")
-      .replace(/href="#[^"]*"/g, "")
-      .replace(/xlink:href="#[^"]*"/g, "")
-      .replace(/\s+/g, " ")
-      .trim()
-
   const markCorrect = useCallback(
     (answer: string) => {
       setIsCorrect(true)
@@ -223,15 +292,28 @@ export default function TypstiquePage() {
     }
   }
 
-  // Accept any input that renders visually identical to the target
+  // Accept any input whose rendered image matches the target (within tolerance).
+  // This makes alternative valid Typst forms succeed, and forgives tiny spacing
+  // differences that don't affect the visible output.
   useEffect(() => {
     if (!previewSvg || !targetSvg) return
     if (targetSvgIndex !== currentIndex) return
     if (previewSvgInput !== userInput) return
     if (solutionShown) return
     if (solvedSet.has(currentIndex)) return
-    if (normalizeSvg(previewSvg) !== normalizeSvg(targetSvg)) return
-    markCorrect(userInput)
+
+    let cancelled = false
+    svgsLookEqual(previewSvg, targetSvg).then((equal) => {
+      if (cancelled || !equal) return
+      // Guard again in case state moved on while we were rasterizing.
+      if (targetSvgIndex !== currentIndex) return
+      if (previewSvgInput !== userInput) return
+      if (solutionShown || solvedSet.has(currentIndex)) return
+      markCorrect(userInput)
+    })
+    return () => {
+      cancelled = true
+    }
   }, [
     previewSvg,
     previewSvgInput,

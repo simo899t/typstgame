@@ -1,10 +1,10 @@
-1 + 1 = 2 # if you cant do this, i suggest you drop out of university.
+11 + 1 = 2 # if you cant do this, i suggest you drop out of university.
 
 a^2 + b^2 = c^2 # use `^` to superscript.
 
 x = {x_1, x_2, x_3, dots, x_n} # use `_` to subscript. Use `dots` to dot.
 
-v dot u = v_1 dot u_1 + v_2 dot u_2 # use `do` to multiply (in contrast to \cdot).
+v dot u = v_1 dot u_1 + v_2 dot u_2 # use `dot` to multiply (in contrast to \cdot).
 
 e^(pi i) - 1 = 0 # use parentheses `()` and <space> between symbols to distinct between them.
 
@@ -16,7 +16,7 @@ forall x in NN, exists y in NN : y > x # For blackboard bold symbols either use 
 
 sum_(i=1)^5 i = 15 # Use `sum_a^b` to make sums initialized at from a to b
 
-product_(i=1)^5 i = 120 Use `product_a^b` to make products initialized at from a to b
+product_(i=1)^5 i = 120 # Use `product_a^b` to make products initialized at from a to b
 
 integral_0^1 x space dif x = 1/2 # Use `dif x` to make products initialized at from a to b. 
 
