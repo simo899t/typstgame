@@ -317,6 +317,15 @@ export default function TypstiquePage() {
       setSolved((s) => s + 1)
       setSolvedSet((prev) => new Set(prev).add(currentIndex))
       setSolvedAnswers((prev) => new Map(prev).set(currentIndex, answer))
+      // If this problem was previously skipped, move it out of the skipped bucket
+      // so completing it after a skip gives full credit.
+      setSkippedSet((prev) => {
+        if (!prev.has(currentIndex)) return prev
+        const next = new Set(prev)
+        next.delete(currentIndex)
+        setSkipped((s) => Math.max(0, s - 1))
+        return next
+      })
       advanceTimeoutRef.current = setTimeout(() => {
         advanceTimeoutRef.current = null
         if (currentIndex + 1 >= problems.length) {
@@ -334,7 +343,6 @@ export default function TypstiquePage() {
     setUserInput(value)
 
     if (
-      !solutionShown &&
       !solvedSet.has(currentIndex) &&
       normalize(value) === normalize(problems[currentIndex].math)
     ) {
@@ -349,7 +357,6 @@ export default function TypstiquePage() {
     if (!previewSvg || !targetSvg) return
     if (targetSvgIndex !== currentIndex) return
     if (previewSvgInput !== userInput) return
-    if (solutionShown) return
     if (solvedSet.has(currentIndex)) return
 
     let cancelled = false
@@ -358,7 +365,7 @@ export default function TypstiquePage() {
       // Guard again in case state moved on while we were rasterizing.
       if (targetSvgIndex !== currentIndex) return
       if (previewSvgInput !== userInput) return
-      if (solutionShown || solvedSet.has(currentIndex)) return
+      if (solvedSet.has(currentIndex)) return
       markCorrect(userInput)
     })
     return () => {
@@ -369,7 +376,6 @@ export default function TypstiquePage() {
     previewSvgInput,
     targetSvg,
     targetSvgIndex,
-    solutionShown,
     solvedSet,
     currentIndex,
     userInput,
@@ -386,17 +392,12 @@ export default function TypstiquePage() {
     }
   }
 
-  const handleShowSolution = () => {
-    if (solutionShown) return
-    setSolutionShown(true)
-    if (!skippedSet.has(currentIndex)) {
-      setSkipped((s) => s + 1)
-      setSkippedSet((prev) => new Set(prev).add(currentIndex))
-    }
+  const handleToggleSolution = () => {
+    setSolutionShown((shown) => !shown)
   }
 
-  const handleShowHint = () => {
-    setHintShown(true)
+  const handleToggleHint = () => {
+    setHintShown((shown) => !shown)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -592,27 +593,26 @@ export default function TypstiquePage() {
           {/* Footer */}
           <footer className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {problems.length - currentIndex - 1} remaining
+              {problems.length - solvedSet.size - skippedSet.size} remaining
               {skipped > 0 && ` · ${skipped} skipped`}
             </p>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleShowHint}
-                disabled={hintShown || !problems[currentIndex]?.hint}
+                onClick={handleToggleHint}
+                disabled={!problems[currentIndex]?.hint}
                 className="text-xs"
               >
-                Hint
+                {hintShown ? "Hide Hint" : "Hint"}
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleShowSolution}
-                disabled={isCorrect || solutionShown}
+                onClick={handleToggleSolution}
                 className="text-xs"
               >
-                Show Solution
+                {solutionShown ? "Hide Solution" : "Show Solution"}
               </Button>
               <Button
                 variant="outline"
