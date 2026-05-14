@@ -15,7 +15,7 @@ product_(i = 1)^n (1 + 1 / i) # product_a^b
 
 integral_0^1 (x^2 + x) space dif x # integral f space dif x
 
-lim_(n -> oo) sum_(i = 1)^n 1 / n # lim_(x -> a) f
+lim_(n -> 2) sum_(i = 1)^n 1 / n # lim_(x -> a) f
 
 f(x) = x dot x + 2 dot x + 1 # no hint
 
@@ -45,17 +45,17 @@ not (p and (q or r)) # not
 
 cases(x^2 + 1, x < 0,x dot x + x, x >= 0) # cases(,;)
 
-mat(1, 2, 3;4, 5, 6;7, 8, 9) dot vec(x, y, z) # mat(,;) vec(,)
+mat(1, 2, 3;4, 5, 6;7, 8, 9) dot vec(x, y, z) = mat(x, 2x, 3x; 4y, 5y, 6y; 7z, 8z, 9z) # mat(,;) vec(,)
 
-A^(-1) dot (A dot x) = x # ^(-1) ()
+A^(-1) (A x) = x # no hint
 
 det(A dot B) = det(A) dot det(B) # det()
 
-integral_0^1 (integral_0^x t dt) dx # integral integral
+integral_0^1 (integral_0^x t dif t) dif x # no hint
 
-lim_(n -> oo) (1 + 1 / n)^n # no hint
+lim_(n -> oo) (1 + 1 / n)^n # oo / infinite
 
-sum_(i = 1)^n sum_(j = 1)^i (i dot j) # sum sum
+sum_(i = 1)^n sum_(j = 1)^i (i dot j) # no hint
 
 f(x) = x dot x + sum_(i = 1)^n x_i / i # no hint
 
