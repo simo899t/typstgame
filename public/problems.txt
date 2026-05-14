@@ -31,9 +31,9 @@ A = {x in RR | x^2 + x - 2 < 0} # RR, bar
 
 A = {x in RR | (x - 1)(x + 2) < 0} # no hint
 
-exists x in RR : x^2 - 2 dot x + 1 = 0 # exists
+exists x in RR : x^2 - 2 x + 1 = 0 # exists
 
-exists! x in RR : x dot x = 1 # EE! # no hint
+exists! x in RR : x^2 = 1 # no hint
 
 forall x in RR : x^2 >= 0 # no hint
 
