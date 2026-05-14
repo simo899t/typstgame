@@ -483,12 +483,19 @@ export default function TypstiquePage() {
         <div className="w-full max-w-2xl space-y-6">
           {/* Header */}
           <header className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="font-serif text-2xl tracking-tight text-foreground hover:text-accent transition-colors"
-            >
-              Typstique
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/">
+                <Button variant="outline" size="sm" className="text-xs">
+                  ← Home
+                </Button>
+              </Link>
+              <Link
+                href="/"
+                className="font-serif text-2xl tracking-tight text-foreground hover:text-accent transition-colors"
+              >
+                Typstique
+              </Link>
+            </div>
             <div className="flex items-center gap-8">
               <div className="text-right">
                 <p className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
