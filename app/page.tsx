@@ -1,53 +1,7 @@
-import fs from "node:fs"
-import path from "node:path"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { TypstTempViewer, type TypstFile } from "@/components/typst-temp-viewer"
-
-const VIEWABLE_EXTENSIONS = new Set([
-  ".typ", ".md", ".txt", ".json", ".yaml", ".yml", ".toml", ".tex", ".bib",
-])
-
-const MAX_INLINE_BYTES = 256 * 1024
-
-function loadTypstTempFiles(): TypstFile[] {
-  const rootDir = path.join(process.cwd(), "public", "typst_temp")
-  if (!fs.existsSync(rootDir)) return []
-  return collectFiles(rootDir, rootDir)
-}
-
-function collectFiles(rootDir: string, dir: string): TypstFile[] {
-  const entries = fs.readdirSync(dir, { withFileTypes: true })
-  const files: TypstFile[] = []
-
-  for (const entry of entries) {
-    if (entry.name.startsWith(".")) continue
-    const full = path.join(dir, entry.name)
-
-    if (entry.isDirectory()) {
-      files.push(...collectFiles(rootDir, full))
-      continue
-    }
-    if (!entry.isFile()) continue
-
-    const stat = fs.statSync(full)
-    const ext = path.extname(entry.name).toLowerCase()
-    const relativePath = path.relative(rootDir, full).split(path.sep).join("/")
-
-    const isViewable = VIEWABLE_EXTENSIONS.has(ext) && stat.size <= MAX_INLINE_BYTES
-    const content = isViewable
-      ? fs.readFileSync(full, "utf8")
-      : `[Binary or large file (${stat.size} bytes). Use the download button to grab it.]`
-
-    files.push({ name: entry.name, size: stat.size, content, relativePath })
-  }
-
-  return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
-}
 
 export default function LandingPage() {
-  const files = loadTypstTempFiles()
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
 
   return (
     <main className="min-h-screen flex flex-col items-center px-6 py-16">
@@ -132,18 +86,20 @@ Because it’s built in Rust, it compiles to a single fast, portable executable 
           </details>
         </section>
 
-        <section className="bg-card border border-border rounded-lg p-8 space-y-5">
-          <div className="flex items-baseline justify-between gap-4 flex-wrap">
-            <div>
-              <h2 className="font-serif text-2xl tracking-tight">
-                Template for usage
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                The template and example files I use for my university notes. Feel free to download and experiment.
-              </p>
-            </div>
+        <section className="bg-card border border-border rounded-lg p-8 flex items-center justify-between gap-6 flex-wrap">
+          <div>
+            <h2 className="font-serif text-2xl tracking-tight">
+              Template for usage
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              The template and example files I use for my university notes. Browse the code and rendered output side by side.
+            </p>
           </div>
-          <TypstTempViewer files={files} basePath={basePath} />
+          <Link href="/template">
+            <Button variant="outline" className="px-6 py-5 text-sm">
+              Open Viewer →
+            </Button>
+          </Link>
         </section>
 
         <section className="text-center space-y-4 pt-4">

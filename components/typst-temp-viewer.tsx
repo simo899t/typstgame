@@ -14,6 +14,7 @@ export type TypstFile = {
 type Props = {
   files: TypstFile[]
   basePath: string
+  fullScreen?: boolean
 }
 
 function formatSize(bytes: number): string {
@@ -111,7 +112,7 @@ function TypstRenderPane({ content, key: _k }: { content: string; key: string })
   )
 }
 
-export function TypstTempViewer({ files, basePath }: Props) {
+export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0)
   const grouped = groupByDir(files)
 
@@ -126,7 +127,7 @@ export function TypstTempViewer({ files, basePath }: Props) {
   const downloadHref = `${basePath}/typst_temp/${active.relativePath.split("/").map(encodeURIComponent).join("/")}`
 
   return (
-    <div className="flex gap-0 border border-border rounded-lg overflow-hidden min-h-[480px]">
+    <div className={fullScreen ? "flex gap-0 border-t border-border overflow-hidden h-full" : "flex gap-0 border border-border rounded-lg overflow-hidden min-h-[480px]"}>
       {/* File tree sidebar */}
       <aside className="w-52 shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
         {Array.from(grouped.entries()).map(([dir, dirFiles]) => (
