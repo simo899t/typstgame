@@ -97,7 +97,7 @@ function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
   return map
 }
 
-function TypstRenderPane({ content, isTemplate, key: _k }: { content: string; isTemplate: boolean; key: string }) {
+function TypstRenderPane({ content, isTemplate, siblings, key: _k }: { content: string; isTemplate: boolean; siblings: TypstFile[]; key: string }) {
   const [phase, setPhase] = useState<"waiting" | "compiling" | "done" | "error">("waiting")
   const [svg, setSvg] = useState("")
   const [error, setError] = useState("")
@@ -107,17 +107,25 @@ function TypstRenderPane({ content, isTemplate, key: _k }: { content: string; is
     if (didRun.current) return
     didRun.current = true
 
-    const run = () => {
+    const run = async () => {
       setPhase("compiling")
-      // @ts-expect-error - $typst is loaded via CDN
-      window.$typst
-        .svg({ mainContent: content })
-        .then((result: string) => { setSvg(result); setPhase("done") })
-        .catch((e: unknown) => {
-          console.error("Typst render error:", e)
-          setError(e instanceof Error ? e.message : String(e))
-          setPhase("error")
-        })
+      try {
+        // Inject sibling .typ files so local imports resolve under /tmp/
+        for (const f of siblings) {
+          if (extOf(f.name) === ".typ") {
+            // @ts-expect-error
+            await window.$typst.addSource(`/tmp/${f.relativePath}`, f.content)
+          }
+        }
+        // @ts-expect-error - $typst is loaded via CDN
+        const result = await window.$typst.svg({ mainContent: content })
+        setSvg(result)
+        setPhase("done")
+      } catch (e: unknown) {
+        console.error("Typst render error:", e)
+        setError(e instanceof Error ? e.message : String(e))
+        setPhase("error")
+      }
     }
 
     // @ts-expect-error
@@ -307,6 +315,7 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
                   key={active.relativePath}
                   content={active.content}
                   isTemplate={active.name === "temp.typ"}
+                  siblings={files.filter(f => f.relativePath !== active.relativePath)}
                 />
               </div>
             </div>
