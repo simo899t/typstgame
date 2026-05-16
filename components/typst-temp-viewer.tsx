@@ -119,6 +119,17 @@ function TypstRenderPane({ content, key: _k }: { content: string; key: string })
 export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0)
   const grouped = groupByDir(files)
+  // All folders open by default
+  const [openDirs, setOpenDirs] = useState<Set<string>>(
+    () => new Set(Array.from(groupByDir(files).keys()))
+  )
+
+  const toggleDir = (dir: string) =>
+    setOpenDirs((prev) => {
+      const next = new Set(prev)
+      next.has(dir) ? next.delete(dir) : next.add(dir)
+      return next
+    })
 
   if (files.length === 0) {
     return <p className="text-sm text-muted-foreground italic">No files uploaded.</p>
@@ -134,36 +145,45 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
     <div className={fullScreen ? "flex gap-0 border-t border-border overflow-hidden h-full" : "flex gap-0 border border-border rounded-lg overflow-hidden min-h-[480px]"}>
       {/* File tree sidebar */}
       <aside className="w-52 shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
-        {Array.from(grouped.entries()).map(([dir, dirFiles]) => (
-          <div key={dir}>
-            {dir && (
-              <p className="px-3 pt-3 pb-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground font-mono flex items-center gap-1">
-                <span className="opacity-50">▸</span> {dir}
-              </p>
-            )}
-            {dirFiles.map((file) => {
-              const idx = files.indexOf(file)
-              const isActive = idx === activeIndex
-              return (
-                <button
-                  key={file.relativePath}
-                  onClick={() => setActiveIndex(idx)}
-                  className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs font-mono transition-colors flex items-center gap-1.5",
-                    dir ? "pl-6" : "pl-3",
-                    isActive
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                  )}
-                >
-                  <span className="opacity-60">{extOf(file.name) === ".typ" ? "◈" : "◻"}</span>
-                  <span className="truncate">{file.name}</span>
-                  <span className="ml-auto shrink-0 opacity-40 text-[10px]">{formatSize(file.size)}</span>
-                </button>
-              )
-            })}
-          </div>
-        ))}
+        <div className="py-1">
+          {Array.from(grouped.entries()).map(([dir, dirFiles]) => {
+            const isOpen = !dir || openDirs.has(dir)
+            return (
+              <div key={dir}>
+                {dir && (
+                  <button
+                    onClick={() => toggleDir(dir)}
+                    className="w-full text-left px-3 py-1.5 text-xs font-mono flex items-center gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    <span className="text-[10px] transition-transform duration-150" style={{ display: "inline-block", transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
+                    <span>{dir}</span>
+                  </button>
+                )}
+                {isOpen && dirFiles.map((file) => {
+                  const idx = files.indexOf(file)
+                  const isActive = idx === activeIndex
+                  return (
+                    <button
+                      key={file.relativePath}
+                      onClick={() => setActiveIndex(idx)}
+                      className={cn(
+                        "w-full text-left py-1.5 text-xs font-mono transition-colors flex items-center gap-1.5",
+                        dir ? "pl-7 pr-3" : "px-3",
+                        isActive
+                          ? "bg-foreground text-background"
+                          : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                      )}
+                    >
+                      <span className="opacity-60 shrink-0">{extOf(file.name) === ".typ" ? "◈" : "◻"}</span>
+                      <span className="truncate">{file.name}</span>
+                      <span className="ml-auto shrink-0 opacity-40 text-[10px]">{formatSize(file.size)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
       </aside>
 
       {/* Content area */}
