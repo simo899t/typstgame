@@ -6,14 +6,21 @@
 #import "@preview/h-graph:0.1.0": *
 #import "@preview/cetz:0.3.4": canvas, draw
 #import "@preview/curryst:0.6.0": rule as _curryst-rule, prooftree as _curryst-prooftree
-#import "@preview/codly:1.3.0": codly, codly-init
-#import "@preview/codly-languages:0.1.10": codly-languages
 #let dirgraph(src) = h-graph(src, polar-render)
 
 #let base-style(body) = {
   show: _word-count
   set text(font: "Times New Roman", size: 11pt, lang: "en")
   set heading(numbering: "1.1")
+  show heading: it => block(
+    above: if it.level == 1 { 1.4em } else { 1em },
+    below: 0.5em,
+    text(
+      size:   (14pt, 12pt, 11pt).at(calc.min(it.level - 1, 2)),
+      weight: "bold",
+      it.body, 
+    ),
+  )
   set enum(numbering: "(a)")
   set math.equation(numbering: none)
   set math.mat(delim: "[", gap: 0.3em)
@@ -23,40 +30,16 @@
     set image(width: auto)
     it
   }
-  show raw.where(block: true): it => {
-    set text(font: ("Menlo", "DejaVu Sans Mono"), size: 9.5pt)
-    let lang = it.lang
-    std.block(
-      breakable: false,
-      width: 100%,
-      {
-        it
-        if lang != none and lang != "" {
-          place(
-            top + right,
-            dx: -4pt,
-            dy: 4pt,
-            box(
-              fill: rgb("#4a5568"),
-              inset: (x: 5pt, y: 2pt),
-              radius: 2pt,
-              text(size: 7pt, weight: "bold", fill: white, font: "Times New Roman", upper(lang)),
-            ),
-          )
-        }
-      },
-    )
-  }
-  show: codly-init
-  codly(
-    languages: codly-languages,
-    zebra-fill: none,
-    display-name: false,
-    display-icon: false,
+  show raw.where(block: true): it => std.block(
+    width: 100%,
+    fill: rgb("#eeeeee"),
+    inset: (left: 14pt, right: 14pt, top: 10pt, bottom: 10pt),
     radius: 2pt,
-    inset: (left: 6pt, right: 6pt, top: 4pt, bottom: 4pt),
-    stroke: 0.5pt + rgb("#cccccc"),
-    fill: rgb("#fafafa"),
+    {
+      set par(leading: 0.8em)
+      set text(fill: rgb("#1c1e26"), font: ("Menlo", "DejaVu Sans Mono"), size: 9.5pt)
+      it
+    },
   )
   show raw.where(block: false): it => box(
     fill: rgb("#eeeeee"),
@@ -124,7 +107,6 @@
 #let summ(a,b,c) = $sum_(#a)^(#b) #c$ 
 #let limm(a) = $lim_(#a)$
 #let pred(a) = $accent(#a,\^)$
-#let ubar(a) = $accent(#a, \u{0331})$
 #let QED = [#h(1fr) $square$]
 #let IH = [*_IH_*]
 #let f = [#h(1fr)]
@@ -132,23 +114,20 @@
 #let qqquad = $quad quad quad$
 #let qqqquad = $quad quad quad quad$
 #let sign(a) = $"sign"(#a)$
-#let psubset = $subset$
-#let subset = $subset.eq$
+#let psubset = $subset.eq$
 #let rang = $chevron.r$
 #let lang = $chevron.l$
 #let pow(x) = $cal(P)(#x)$
-#let imp = $=>$
+#let star = $star.op$
+#let imp = $==>$
 #let iimp = $==>$
 #let bi = $<==>$
 #let bishort = $<=>$
-#let fx = $f(x)$
-#let gx = $g(x)$
-#let hx = $h(x)$
-#let st = $s.t quad$
 #let to = $->$
-#let bool = [Bool]
-#let tran(x) = $#x^sans(T)$
-#let Astar = $A^star$
+#let bool = "Bool"
+
+#let st = $s.t quad$
+
 // --- Calculus notation ---
 #let dx = $dif x$
 #let dy = $dif y$
@@ -163,9 +142,9 @@
 #let ddx = $dif/(dif x)$                         // d/dx  (operator)
 #let ddy = $dif/(dif y)$                         // d/dy  (operator)
 #let ddz = $dif/(dif z)$                         // d/dz  (operator)
-#let dd(x) = $dif/(dif #x)$                      // d/d(var)  e.g. dd(t)
-#let dv(f, x) = $(dif #f)/(dif #x)$              // df/dx  e.g. dv(f,x)
-#let dvn(f, x, n) = $(dif^#n #f)/(dif #x^#n)$    // dⁿf/dxⁿ  e.g. dvn(f,x,2)
+#let dd(x) = $dif/(dif #x)$                     // d/d(var)  e.g. dd(t)
+#let dv(f, x) = $(dif #f)/(dif #x)$             // df/dx  e.g. dv(f,x)
+#let dvn(f, x, n) = $(dif^#n #f)/(dif #x^#n)$   // dⁿf/dxⁿ  e.g. dvn(f,x,2)
 
 // Partial derivatives
 #let ppx = $partial/(partial x)$ 
@@ -212,6 +191,7 @@
 #let dag = $dagger$
 #let phid = $phi^dag$
 #let Gamd = $Gam^dag$
+#let implies = $==>$
 
 
 // --- Proof trees (curryst-backed) ---
@@ -224,6 +204,9 @@
   [Premise 3],
   [Conclusion],
 )
+
+
+
 
 // --- draw prooftrees ---
 
@@ -610,8 +593,8 @@
       inset: (left: 14pt, right: 14pt, top: 10pt, bottom: 10pt),
       {
         set par(leading: body-leading)
-        set text(fill: body-text-fill, size: body-size, ..(if body-font == auto { (:) } else { (font: body-font) }))
-        content
+        let body = text(fill: body-text-fill, size: body-size, content)
+        if body-font == auto { body } else { text(font: body-font, body) }
       },
     )
   },
