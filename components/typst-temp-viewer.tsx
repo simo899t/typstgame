@@ -310,6 +310,9 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
               <p className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
                 Preview
               </p>
+              <p className="px-4 pb-2 text-[11px] text-muted-foreground/60 italic shrink-0">
+                New user? Expect a 10–20 s delay on first load.
+              </p>
               <div className="flex-1">
                 <TypstRenderPane
                   key={active.relativePath}
