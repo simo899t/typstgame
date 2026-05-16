@@ -30,6 +30,61 @@ function extOf(name: string): string {
 
 const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"])
 
+function escHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+// Simple Typst syntax highlighter using Typst's teal brand colour (#239DAD)
+function highlightTypst(code: string): string {
+  const out: string[] = []
+  let i = 0
+  let plain = ""
+
+  const flush = () => { if (plain) { out.push(escHtml(plain)); plain = "" } }
+  const span = (text: string, color: string) => {
+    flush()
+    out.push(`<span style="color:${color}">${escHtml(text)}</span>`)
+  }
+
+  while (i < code.length) {
+    // Line comment //
+    if (code[i] === "/" && code[i + 1] === "/") {
+      const end = code.indexOf("\n", i)
+      span(end === -1 ? code.slice(i) : code.slice(i, end), "#888")
+      i = end === -1 ? code.length : end
+      continue
+    }
+    // Block comment /* */
+    if (code[i] === "/" && code[i + 1] === "*") {
+      const end = code.indexOf("*/", i + 2)
+      span(end === -1 ? code.slice(i) : code.slice(i, end + 2), "#888")
+      i = end === -1 ? code.length : end + 2
+      continue
+    }
+    // String literal
+    if (code[i] === '"') {
+      let j = i + 1
+      while (j < code.length && code[j] !== '"') { if (code[j] === "\\") j++; j++ }
+      span(code.slice(i, j + 1), "#c97c2e")
+      i = j + 1
+      continue
+    }
+    // Math mode $...$
+    if (code[i] === "$") {
+      const end = code.indexOf("$", i + 1)
+      if (end !== -1) { span(code.slice(i, end + 1), "#8b5cf6"); i = end + 1; continue }
+    }
+    // #function or #keyword
+    if (code[i] === "#") {
+      const m = code.slice(i).match(/^#[a-zA-Z_][a-zA-Z0-9_-]*/)
+      if (m) { span(m[0], "#239DAD"); i += m[0].length; continue }
+    }
+    plain += code[i++]
+  }
+  flush()
+  return out.join("")
+}
+
 // Group files by their parent directory (the part before the last /)
 function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
   const map = new Map<string, TypstFile[]>()
@@ -42,10 +97,10 @@ function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
   return map
 }
 
-function TypstRenderPane({ content, key: _k }: { content: string; key: string }) {
+function TypstRenderPane({ content, isTemplate, key: _k }: { content: string; isTemplate: boolean; key: string }) {
   const [phase, setPhase] = useState<"waiting" | "compiling" | "done" | "error">("waiting")
   const [svg, setSvg] = useState("")
-  const [, setError] = useState("")
+  const [error, setError] = useState("")
   const didRun = useRef(false)
 
   useEffect(() => {
@@ -101,10 +156,12 @@ function TypstRenderPane({ content, key: _k }: { content: string; key: string })
   }
 
   if (phase === "error") {
-    return (
+    return isTemplate ? (
       <p className="text-sm text-muted-foreground italic p-6 text-center">
         This is a template and is not made to compile on its own.
       </p>
+    ) : (
+      <p className="text-xs text-destructive font-mono break-all p-4">{error}</p>
     )
   }
 
@@ -118,7 +175,25 @@ function TypstRenderPane({ content, key: _k }: { content: string; key: string })
 
 export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0)
+  const [splitPct, setSplitPct] = useState(50)
+  const containerRef = useRef<HTMLDivElement>(null)
   const grouped = groupByDir(files)
+
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const onMove = (mv: MouseEvent) => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const pct = ((mv.clientX - rect.left) / rect.width) * 100
+      setSplitPct(Math.min(80, Math.max(20, pct)))
+    }
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove)
+      window.removeEventListener("mouseup", onUp)
+    }
+    window.addEventListener("mousemove", onMove)
+    window.addEventListener("mouseup", onUp)
+  }
   // All folders open by default
   const [openDirs, setOpenDirs] = useState<Set<string>>(
     () => new Set(Array.from(groupByDir(files).keys()))
@@ -202,18 +277,30 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
 
         {/* Split view */}
         {isTypst ? (
-          <div className="flex-1 grid grid-cols-2 min-h-0 divide-x divide-border">
-            <div className="overflow-auto">
-              <pre className="p-4 text-xs font-mono whitespace-pre leading-relaxed text-foreground/90">
-                {active.content}
-              </pre>
+          <div ref={containerRef} className="flex-1 flex min-h-0 select-none">
+            {/* Code pane */}
+            <div className="overflow-auto" style={{ width: `${splitPct}%` }}>
+              <pre
+                className="p-4 text-xs font-mono whitespace-pre leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: highlightTypst(active.content) }}
+              />
             </div>
-            <div className="flex flex-col min-h-0">
+            {/* Drag handle */}
+            <div
+              onMouseDown={startDrag}
+              className="w-1 shrink-0 bg-border hover:bg-foreground/30 cursor-col-resize transition-colors"
+            />
+            {/* Preview pane */}
+            <div className="flex flex-col min-h-0 overflow-auto" style={{ width: `${100 - splitPct}%` }}>
               <p className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
                 Preview
               </p>
-              <div className="flex-1 overflow-auto">
-                <TypstRenderPane key={active.relativePath} content={active.content} />
+              <div className="flex-1">
+                <TypstRenderPane
+                  key={active.relativePath}
+                  content={active.content}
+                  isTemplate={active.name === "temp.typ"}
+                />
               </div>
             </div>
           </div>
