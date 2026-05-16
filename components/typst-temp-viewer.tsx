@@ -176,11 +176,13 @@ function TypstRenderPane({ content, isTemplate, key: _k }: { content: string; is
 export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [splitPct, setSplitPct] = useState(50)
+  const [dragging, setDragging] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const grouped = groupByDir(files)
 
   const startDrag = (e: React.MouseEvent) => {
     e.preventDefault()
+    setDragging(true)
     const onMove = (mv: MouseEvent) => {
       const rect = containerRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -188,6 +190,7 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
       setSplitPct(Math.min(80, Math.max(20, pct)))
     }
     const onUp = () => {
+      setDragging(false)
       window.removeEventListener("mousemove", onMove)
       window.removeEventListener("mouseup", onUp)
     }
@@ -277,7 +280,7 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
 
         {/* Split view */}
         {isTypst ? (
-          <div ref={containerRef} className="flex-1 flex min-h-0 select-none">
+          <div ref={containerRef} className={`flex-1 flex min-h-0${dragging ? " select-none" : ""}`}>
             {/* Code pane */}
             <div className="overflow-auto" style={{ width: `${splitPct}%` }}>
               <pre
