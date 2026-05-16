@@ -45,7 +45,7 @@ function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
 function TypstRenderPane({ content, key: _k }: { content: string; key: string }) {
   const [phase, setPhase] = useState<"waiting" | "compiling" | "done" | "error">("waiting")
   const [svg, setSvg] = useState("")
-  const [error, setError] = useState("")
+  const [, setError] = useState("")
   const didRun = useRef(false)
 
   useEffect(() => {
@@ -101,7 +101,11 @@ function TypstRenderPane({ content, key: _k }: { content: string; key: string })
   }
 
   if (phase === "error") {
-    return <p className="text-xs text-destructive font-mono break-all p-4">{error}</p>
+    return (
+      <p className="text-sm text-muted-foreground italic p-6 text-center">
+        This is a template and is not made to compile on its own.
+      </p>
+    )
   }
 
   return (
