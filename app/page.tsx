@@ -11,29 +11,38 @@ const VIEWABLE_EXTENSIONS = new Set([
 const MAX_INLINE_BYTES = 256 * 1024
 
 function loadTypstTempFiles(): TypstFile[] {
-  const dir = path.join(process.cwd(), "public", "typst_temp")
-  if (!fs.existsSync(dir)) return []
+  const rootDir = path.join(process.cwd(), "public", "typst_temp")
+  if (!fs.existsSync(rootDir)) return []
+  return collectFiles(rootDir, rootDir)
+}
 
+function collectFiles(rootDir: string, dir: string): TypstFile[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
   const files: TypstFile[] = []
 
   for (const entry of entries) {
-    if (!entry.isFile()) continue
     if (entry.name.startsWith(".")) continue
-
     const full = path.join(dir, entry.name)
+
+    if (entry.isDirectory()) {
+      files.push(...collectFiles(rootDir, full))
+      continue
+    }
+    if (!entry.isFile()) continue
+
     const stat = fs.statSync(full)
     const ext = path.extname(entry.name).toLowerCase()
+    const relativePath = path.relative(rootDir, full).split(path.sep).join("/")
 
     const isViewable = VIEWABLE_EXTENSIONS.has(ext) && stat.size <= MAX_INLINE_BYTES
     const content = isViewable
       ? fs.readFileSync(full, "utf8")
       : `[Binary or large file (${stat.size} bytes). Use the download button to grab it.]`
 
-    files.push({ name: entry.name, size: stat.size, content })
+    files.push({ name: entry.name, size: stat.size, content, relativePath })
   }
 
-  return files.sort((a, b) => a.name.localeCompare(b.name))
+  return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
 }
 
 export default function LandingPage() {

@@ -182,6 +182,7 @@ export default function TypstiquePage() {
   const [userInput, setUserInput] = useState("")
   const [targetSvg, setTargetSvg] = useState("")
   const [targetSvgIndex, setTargetSvgIndex] = useState(-1)
+  const [targetRenderError, setTargetRenderError] = useState<string | null>(null)
   const [previewSvg, setPreviewSvg] = useState("")
   const [previewSvgInput, setPreviewSvgInput] = useState("")
   const [previewError, setPreviewError] = useState(false)
@@ -249,9 +250,12 @@ export default function TypstiquePage() {
       const svg = await window.$typst.svg({ mainContent: makeTypstDoc(math) })
       setTargetSvg(svg)
       setTargetSvgIndex(indexAtCall)
-    } catch {
+      setTargetRenderError(null)
+    } catch (e) {
+      console.error("Typst target render error:", e)
       setTargetSvg("")
       setTargetSvgIndex(-1)
+      setTargetRenderError(e instanceof Error ? e.message : String(e))
     }
   }, [typstReady, problems, currentIndex])
 
@@ -271,6 +275,7 @@ export default function TypstiquePage() {
     setPreviewError(false)
     setSolutionShown(false)
     setHintShown(false)
+    setTargetRenderError(null)
   }, [renderTarget, currentIndex])
 
   // Live preview with debounce
@@ -521,10 +526,14 @@ export default function TypstiquePage() {
               isCorrect && "border-success bg-success/5"
             )}
           >
-            <div
-              className="[&_svg]:max-w-full [&_svg]:h-auto"
-              dangerouslySetInnerHTML={{ __html: targetSvg }}
-            />
+            {targetSvg ? (
+              <div
+                className="[&_svg]:max-w-full [&_svg]:h-auto"
+                dangerouslySetInnerHTML={{ __html: targetSvg }}
+              />
+            ) : targetRenderError ? (
+              <p className="text-xs text-destructive font-mono break-all">{targetRenderError}</p>
+            ) : null}
           </div>
 
           {/* Input */}
