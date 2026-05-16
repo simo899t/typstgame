@@ -644,6 +644,19 @@ export default function TypstiquePage() {
               </Button>
             </div>
           </footer>
+
+          <p className="text-xs text-muted-foreground/60 text-center pt-2">
+            Feeling stuck? See{" "}
+            <a
+              href="https://typst.app/docs/reference/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-muted-foreground transition-colors"
+            >
+              typst.app/docs/reference
+            </a>{" "}
+            for help.
+          </p>
         </div>
 
         {/* Toggle button */}
