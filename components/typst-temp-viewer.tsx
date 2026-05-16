@@ -156,13 +156,17 @@ function TypstRenderPane({ content, isTemplate, key: _k }: { content: string; is
   }
 
   if (phase === "error") {
-    return isTemplate ? (
-      <p className="text-sm text-muted-foreground italic p-6 text-center">
-        This is a template and is not made to compile on its own.
-      </p>
-    ) : (
-      <p className="text-xs text-destructive font-mono break-all p-4">{error}</p>
-    )
+    const isAccessDenied = error.includes("access denied") || error.includes("failed to load file")
+    if (isTemplate || isAccessDenied) {
+      return (
+        <p className="text-sm text-muted-foreground italic p-6 text-center">
+          {isTemplate
+            ? "This is a template and is not made to compile on its own."
+            : "This file imports local files that can't be loaded in the browser — download it and open it in the Typst app to view."}
+        </p>
+      )
+    }
+    return <p className="text-xs text-destructive font-mono break-all p-4">{error}</p>
   }
 
   return (
