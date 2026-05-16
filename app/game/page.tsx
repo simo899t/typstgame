@@ -482,9 +482,9 @@ export default function TypstiquePage() {
 
   // Game screen
   return (
-    <main className="min-h-screen flex">
+    <main className="h-screen flex overflow-hidden">
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 relative overflow-y-auto">
         <div className="w-full max-w-2xl space-y-6">
           {/* Header */}
           <header className="flex items-center justify-between">
@@ -672,58 +672,60 @@ export default function TypstiquePage() {
       {/* Problems sidebar - right side */}
       <aside
         className={cn(
-          "w-64 border-l border-border bg-card/50 p-4 overflow-y-auto transition-all duration-300",
-          sidebarOpen ? "translate-x-0" : "translate-x-full w-0 p-0 border-0"
+          "border-l border-border bg-card/50 flex flex-col transition-all duration-300 overflow-hidden",
+          sidebarOpen ? "w-36" : "w-0 border-0"
         )}
       >
-        <div className={cn("space-y-1", !sidebarOpen && "hidden")}>
-          <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 px-2">
-            Problems
-          </h2>
-          {problems.map((_, idx) => {
-            const isSolved = solvedSet.has(idx)
-            const isSkipped = skippedSet.has(idx)
-            const isCurrent = idx === currentIndex
+        <h2 className="text-xs uppercase tracking-[0.15em] text-muted-foreground px-3 pt-4 pb-2 shrink-0">
+          Problems
+        </h2>
+        <div className="overflow-y-auto flex-1 px-2 pb-4">
+          <div className="space-y-1">
+            {problems.map((_, idx) => {
+              const isSolved = solvedSet.has(idx)
+              const isSkipped = skippedSet.has(idx)
+              const isCurrent = idx === currentIndex
 
-            return (
-              <button
-                key={idx}
-                onClick={() => {
-                  if (advanceTimeoutRef.current) {
-                    clearTimeout(advanceTimeoutRef.current)
-                    advanceTimeoutRef.current = null
-                  }
-                  setCurrentIndex(idx)
-                }}
-                className={cn(
-                  "w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center justify-between",
-                  isCurrent
-                    ? "bg-foreground text-background"
-                    : isSolved
-                      ? "bg-success/10 hover:bg-success/20"
-                      : isSkipped
-                        ? "bg-muted hover:bg-muted/80"
-                        : "text-muted-foreground hover:bg-muted/50"
-                )}
-              >
-                <span>Problem {idx + 1}</span>
-                {(isSolved || isSkipped) && (
-                  <span
-                    className={cn(
-                      "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded",
-                      isCurrent
-                        ? "bg-background/20 text-background"
-                        : isSolved
-                          ? "bg-success/20 text-success"
-                          : "bg-foreground/10 text-muted-foreground"
-                    )}
-                  >
-                    {isSolved ? "solved" : "skipped"}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+              return (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    if (advanceTimeoutRef.current) {
+                      clearTimeout(advanceTimeoutRef.current)
+                      advanceTimeoutRef.current = null
+                    }
+                    setCurrentIndex(idx)
+                  }}
+                  className={cn(
+                    "w-full text-left px-2 py-1.5 rounded-md text-sm tabular-nums transition-colors flex items-center justify-between gap-1",
+                    isCurrent
+                      ? "bg-foreground text-background"
+                      : isSolved
+                        ? "bg-success/10 hover:bg-success/20"
+                        : isSkipped
+                          ? "bg-muted hover:bg-muted/80"
+                          : "text-muted-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <span>{idx + 1}</span>
+                  {(isSolved || isSkipped) && (
+                    <span
+                      className={cn(
+                        "text-[9px] uppercase tracking-wider px-1 py-0.5 rounded shrink-0",
+                        isCurrent
+                          ? "bg-background/20 text-background"
+                          : isSolved
+                            ? "bg-success/20 text-success"
+                            : "bg-foreground/10 text-muted-foreground"
+                      )}
+                    >
+                      {isSolved ? "✓" : "—"}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </aside>
     </main>
