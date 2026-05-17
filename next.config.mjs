@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const basePath = '/typstgame'
+const basePath = '/typstnique'
 
 const nextConfig = {
   output: 'export',
