@@ -115,8 +115,8 @@
 #let qqqquad = $quad quad quad quad$
 #let sign(a) = $"sign"(#a)$
 #let psubset = $subset.eq$
-#let rang = $chevron.r$
-#let lang = $chevron.l$
+#let rang = $angle.r$
+#let lang = $angle.l$
 #let pow(x) = $cal(P)(#x)$
 #let star = $star.op$
 #let imp = $==>$
