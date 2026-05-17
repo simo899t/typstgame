@@ -11,7 +11,7 @@ export default function LandingPage() {
             A Typst playground
           </p>
           <h1 className="font-serif text-6xl md:text-7xl tracking-tight text-foreground">
-            Typstique
+            Typstnique
           </h1>
           <p className="text-base text-muted-foreground max-w-xl mx-auto">
             Practice typing Typst math, learn what Typst is, and grab the

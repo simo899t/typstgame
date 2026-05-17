@@ -169,7 +169,7 @@ async function svgsLookEqual(svgA: string, svgB: string): Promise<boolean> {
   return pixelDiffRatio(dataA, dataB) < 0.015
 }
 
-export default function TypstiquePage() {
+export default function TypstniquePage() {
   const [gameState, setGameState] = useState<GameState>("loading")
   const [problems, setProblems] = useState<Problem[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -429,7 +429,7 @@ export default function TypstiquePage() {
       <main className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center space-y-6">
           <h1 className="font-serif text-5xl md:text-7xl tracking-tight text-foreground">
-            Typstique
+            Typstnique
           </h1>
           <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
             A Typst Math Typing Practice
@@ -498,7 +498,7 @@ export default function TypstiquePage() {
                 href="/"
                 className="font-serif text-2xl tracking-tight text-foreground hover:text-accent transition-colors"
               >
-                Typstique
+                Typstnique
               </Link>
             </div>
             <div className="flex items-center gap-8">
