@@ -126,3 +126,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .font-helvetica {
+    font-family: Helvetica, Arial, sans-serif;
+  }
+}

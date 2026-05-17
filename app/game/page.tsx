@@ -551,7 +551,7 @@ export default function TypstiquePage() {
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="type typst math..."
-              className="border-0 shadow-none focus-visible:ring-0 font-mono py-4 px-0 bg-transparent placeholder:text-muted-foreground/40"
+              className="border-0 shadow-none focus-visible:ring-0 font-helvetica py-4 px-0 bg-transparent placeholder:text-muted-foreground/40"
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
@@ -588,7 +588,7 @@ export default function TypstiquePage() {
               <span className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground shrink-0">
                 Hint
               </span>
-              <p className="text-sm text-foreground italic break-words">
+              <p className="text-sm text-foreground font-helvetica break-words">
                 {problems[currentIndex].hint}
               </p>
             </div>
@@ -620,7 +620,9 @@ export default function TypstiquePage() {
                 disabled={!problems[currentIndex]?.hint}
                 className="text-xs"
               >
-                {hintShown ? "Hide Hint" : "Hint"}
+                {problems[currentIndex]?.hint
+                  ? hintShown ? "Hide Hint" : "Hint"
+                  : "No Hint"}
               </Button>
               <Button
                 variant="outline"
