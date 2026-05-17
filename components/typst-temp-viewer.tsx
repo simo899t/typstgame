@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -9,6 +9,7 @@ export type TypstFile = {
   size: number
   content: string
   relativePath: string
+  pdfRelativePath?: string
 }
 
 type Props = {
@@ -34,7 +35,6 @@ function escHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 }
 
-// Simple Typst syntax highlighter using Typst's teal brand colour (#239DAD)
 function highlightTypst(code: string): string {
   const out: string[] = []
   let i = 0
@@ -47,21 +47,18 @@ function highlightTypst(code: string): string {
   }
 
   while (i < code.length) {
-    // Line comment //
     if (code[i] === "/" && code[i + 1] === "/") {
       const end = code.indexOf("\n", i)
       span(end === -1 ? code.slice(i) : code.slice(i, end), "#888")
       i = end === -1 ? code.length : end
       continue
     }
-    // Block comment /* */
     if (code[i] === "/" && code[i + 1] === "*") {
       const end = code.indexOf("*/", i + 2)
       span(end === -1 ? code.slice(i) : code.slice(i, end + 2), "#888")
       i = end === -1 ? code.length : end + 2
       continue
     }
-    // String literal
     if (code[i] === '"') {
       let j = i + 1
       while (j < code.length && code[j] !== '"') { if (code[j] === "\\") j++; j++ }
@@ -69,12 +66,10 @@ function highlightTypst(code: string): string {
       i = j + 1
       continue
     }
-    // Math mode $...$
     if (code[i] === "$") {
       const end = code.indexOf("$", i + 1)
       if (end !== -1) { span(code.slice(i, end + 1), "#8b5cf6"); i = end + 1; continue }
     }
-    // #function or #keyword
     if (code[i] === "#") {
       const m = code.slice(i).match(/^#[a-zA-Z_][a-zA-Z0-9_-]*/)
       if (m) { span(m[0], "#239DAD"); i += m[0].length; continue }
@@ -85,7 +80,6 @@ function highlightTypst(code: string): string {
   return out.join("")
 }
 
-// Group files by their parent directory (the part before the last /)
 function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
   const map = new Map<string, TypstFile[]>()
   for (const file of files) {
@@ -97,100 +91,23 @@ function groupByDir(files: TypstFile[]): Map<string, TypstFile[]> {
   return map
 }
 
-function TypstRenderPane({ content, isTemplate, siblings, key: _k }: { content: string; isTemplate: boolean; siblings: TypstFile[]; key: string }) {
-  const [phase, setPhase] = useState<"waiting" | "compiling" | "done" | "error">("waiting")
-  const [svg, setSvg] = useState("")
-  const [error, setError] = useState("")
-  const didRun = useRef(false)
-
-  useEffect(() => {
-    if (didRun.current) return
-    didRun.current = true
-
-    const run = async () => {
-      setPhase("compiling")
-      try {
-        // Inject sibling .typ files so local imports resolve under /tmp/
-        for (const f of siblings) {
-          if (extOf(f.name) === ".typ") {
-            // @ts-expect-error
-            await window.$typst.addSource(`/tmp/${f.relativePath}`, f.content)
-          }
-        }
-        // @ts-expect-error - $typst is loaded via CDN
-        const result = await window.$typst.svg({ mainContent: content })
-        setSvg(result)
-        setPhase("done")
-      } catch (e: unknown) {
-        console.error("Typst render error:", e)
-        setError(e instanceof Error ? e.message : String(e))
-        setPhase("error")
-      }
-    }
-
-    // @ts-expect-error
-    if (window.$typst) {
-      run()
-      return
-    }
-
-    const existing = document.querySelector('script[src*="typst-all-in-one"]') as HTMLScriptElement | null
-    if (existing) {
-      existing.addEventListener("load", run, { once: true })
-      return
-    }
-
-    const script = document.createElement("script")
-    script.type = "module"
-    script.src = "https://cdn.jsdelivr.net/npm/@myriaddreamin/typst-all-in-one.ts@0.6.0/dist/esm/index.js"
-    script.onload = run
-    document.head.appendChild(script)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  if (phase === "waiting" || phase === "compiling") {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground p-6">
-        <div className="flex gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-pulse" />
-          <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-pulse [animation-delay:150ms]" />
-          <span className="w-1.5 h-1.5 rounded-full bg-foreground/30 animate-pulse [animation-delay:300ms]" />
-        </div>
-        <p className="text-xs italic text-center">
-          Compiling… packages download on first run, may take ~30 s
-        </p>
-      </div>
-    )
-  }
-
-  if (phase === "error") {
-    const isAccessDenied = error.includes("access denied") || error.includes("failed to load file")
-    if (isTemplate || isAccessDenied) {
-      return (
-        <p className="text-sm text-muted-foreground italic p-6 text-center">
-          {isTemplate
-            ? "This is a template and is not made to compile on its own."
-            : "This file imports local files that can't be loaded in the browser — download it and open it in the Typst app to view."}
-        </p>
-      )
-    }
-    return <p className="text-xs text-destructive font-mono break-all p-4">{error}</p>
-  }
-
-  return (
-    <div
-      className="overflow-auto p-4 [&_svg]:max-w-full [&_svg]:h-auto"
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
-  )
-}
-
 export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) {
   const [activeIndex, setActiveIndex] = useState(0)
   const [splitPct, setSplitPct] = useState(50)
   const [dragging, setDragging] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const grouped = groupByDir(files)
+
+  const [openDirs, setOpenDirs] = useState<Set<string>>(
+    () => new Set(Array.from(groupByDir(files).keys()))
+  )
+
+  const toggleDir = (dir: string) =>
+    setOpenDirs((prev) => {
+      const next = new Set(prev)
+      next.has(dir) ? next.delete(dir) : next.add(dir)
+      return next
+    })
 
   const startDrag = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -209,17 +126,6 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
     window.addEventListener("mousemove", onMove)
     window.addEventListener("mouseup", onUp)
   }
-  // All folders open by default
-  const [openDirs, setOpenDirs] = useState<Set<string>>(
-    () => new Set(Array.from(groupByDir(files).keys()))
-  )
-
-  const toggleDir = (dir: string) =>
-    setOpenDirs((prev) => {
-      const next = new Set(prev)
-      next.has(dir) ? next.delete(dir) : next.add(dir)
-      return next
-    })
 
   if (files.length === 0) {
     return <p className="text-sm text-muted-foreground italic">No files uploaded.</p>
@@ -230,9 +136,15 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
   const isTypst = ext === ".typ"
   const isImage = IMAGE_EXTS.has(ext)
   const downloadHref = `${basePath}/typst_temp/${active.relativePath.split("/").map(encodeURIComponent).join("/")}`
+  const pdfHref = active.pdfRelativePath
+    ? `${basePath}/typst_temp/${active.pdfRelativePath.split("/").map(encodeURIComponent).join("/")}`
+    : null
 
   return (
-    <div className={fullScreen ? "flex gap-0 border-t border-border overflow-hidden h-full" : "flex gap-0 border border-border rounded-lg overflow-hidden min-h-[480px]"}>
+    <div className={fullScreen
+      ? "flex gap-0 border-t border-border overflow-hidden h-full"
+      : "flex gap-0 border border-border rounded-lg overflow-hidden min-h-[480px]"
+    }>
       {/* File tree sidebar */}
       <aside className="w-52 shrink-0 border-r border-border bg-muted/20 overflow-y-auto">
         <div className="py-1">
@@ -290,7 +202,6 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
           </a>
         </div>
 
-        {/* Split view */}
         {isTypst ? (
           <div ref={containerRef} className={`flex-1 flex min-h-0${dragging ? " select-none" : ""}`}>
             {/* Code pane */}
@@ -306,31 +217,29 @@ export function TypstTempViewer({ files, basePath, fullScreen = false }: Props) 
               className="w-1 shrink-0 bg-border hover:bg-foreground/30 cursor-col-resize transition-colors"
             />
             {/* Preview pane */}
-            <div className="flex flex-col min-h-0 overflow-auto" style={{ width: `${100 - splitPct}%` }}>
+            <div className="flex flex-col min-h-0" style={{ width: `${100 - splitPct}%` }}>
               <p className="px-4 pt-2 pb-1 text-[10px] uppercase tracking-[0.12em] text-muted-foreground shrink-0">
                 Preview
               </p>
-              <p className="px-4 pb-2 text-[11px] text-muted-foreground/60 italic shrink-0">
-                New user? Expect a 10–20 s delay on first load.
-              </p>
-              <div className="flex-1">
-                <TypstRenderPane
-                  key={active.relativePath}
-                  content={active.content}
-                  isTemplate={active.name === "temp.typ"}
-                  siblings={files.filter(f => f.relativePath !== active.relativePath)}
-                />
+              <div className="flex-1 overflow-hidden">
+                {pdfHref ? (
+                  <iframe
+                    src={pdfHref}
+                    className="w-full h-full border-0"
+                    title={active.name}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground italic p-6 text-center">
+                    No PDF found — compile locally and add a matching .pdf file.
+                  </p>
+                )}
               </div>
             </div>
           </div>
         ) : isImage ? (
           <div className="flex-1 flex items-center justify-center p-6 overflow-auto">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={downloadHref}
-              alt={active.name}
-              className="max-w-full max-h-full object-contain"
-            />
+            <img src={downloadHref} alt={active.name} className="max-w-full max-h-full object-contain" />
           </div>
         ) : (
           <div className="flex-1 overflow-auto">

@@ -26,7 +26,12 @@ function collectFiles(rootDir: string, dir: string): TypstFile[] {
     const content = isViewable
       ? fs.readFileSync(full, "utf8")
       : `[Binary or large file (${stat.size} bytes). Download to view.]`
-    files.push({ name: entry.name, size: stat.size, content, relativePath })
+    const pdfName = entry.name.replace(/\.[^.]+$/, ".pdf")
+    const pdfFull = path.join(dir, pdfName)
+    const pdfRelativePath = pdfName !== entry.name && fs.existsSync(pdfFull)
+      ? path.relative(rootDir, pdfFull).split(path.sep).join("/")
+      : undefined
+    files.push({ name: entry.name, size: stat.size, content, relativePath, pdfRelativePath })
   }
 
   return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath))
