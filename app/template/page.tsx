@@ -21,6 +21,7 @@ function collectFiles(rootDir: string, dir: string): TypstFile[] {
 
     const stat = fs.statSync(full)
     const ext = path.extname(entry.name).toLowerCase()
+    if (ext === ".pdf") continue
     const relativePath = path.relative(rootDir, full).split(path.sep).join("/")
     const isViewable = VIEWABLE_EXTENSIONS.has(ext) && stat.size <= MAX_INLINE_BYTES
     const content = isViewable
